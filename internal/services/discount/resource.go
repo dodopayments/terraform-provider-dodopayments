@@ -6,10 +6,12 @@ import (
 	"github.com/dodopayments/terraform-provider-dodopayments/internal/engine"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -24,6 +26,7 @@ func NewResource() resource.Resource {
 var resourceSpec = &engine.ResourceSpec{
 	Name:             "discount",
 	IDProperty:       "discount_id",
+	ParentParams:     []string{},
 	CreateMethod:     "POST",
 	CreatePath:       "discounts",
 	CreatePathParam:  "",
@@ -36,10 +39,30 @@ var resourceSpec = &engine.ResourceSpec{
 	UpdateFields:     []string{"amount", "code", "currency_options", "customer_eligibility", "expires_at", "metadata", "name", "per_customer_usage_limit", "preserve_on_plan_change", "restricted_to", "starts_at", "subscription_cycles", "type", "usage_limit"},
 	UpdateOnlyFields: []string{},
 	UpdateFull:       false,
-	JSONAttrs:        map[string]bool{"metadata": true},
+	Rules: engine.Rules{
+		JSONAttrs:   map[string]bool{},
+		KeepPrior:   map[string]bool{},
+		ListKeys:    map[string]string{},
+		StripPrefix: map[string]string{},
+		Aliases:     map[string]string{},
+		Decimals:    map[string]bool{},
+	},
 	WriteOnly:        []string{},
+	MergeMaps:        map[string]bool{},
 	ReadAfterWrite:   false,
+	ArchivedProperty: "",
+	DestroyWarning:   "",
+	ReplaceFields:    []string{},
+	IdentitySchema: identityschema.Schema{
+		Attributes: map[string]identityschema.Attribute{
+			"id": identityschema.StringAttribute{
+				Description:       "The ID of the discount.",
+				RequiredForImport: true,
+			},
+		},
+	},
 	Schema: schema.Schema{
+		Version:             0,
 		MarkdownDescription: "Manages a discount.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -84,8 +107,9 @@ var resourceSpec = &engine.ResourceSpec{
 							Computed:            true,
 						},
 						"max_amount_possible": schema.Int64Attribute{
-							MarkdownDescription: "The most this code discounts in this currency's subunits. For `flat` codes\nthis is the deduction; for `percentage` codes it is the max-discount cap.\nMust be > 0 if provided.",
+							MarkdownDescription: "The most this code discounts in this currency's subunits. For `flat` codes\nthis is the deduction; for `percentage` codes it is the max-discount cap.\nMust be > 0 if provided. If you remove this attribute from the configuration, the API keeps the last value.",
 							Optional:            true,
+							Computed:            true,
 						},
 						"minimum_subtotal": schema.Int64Attribute{
 							MarkdownDescription: "Eligible-cart threshold in this currency's subunits (0 = no minimum). If you remove this attribute from the configuration, the API keeps the last value.",
@@ -112,14 +136,16 @@ var resourceSpec = &engine.ResourceSpec{
 				MarkdownDescription: "When the discount expires, if ever.",
 				Optional:            true,
 			},
-			"metadata": schema.StringAttribute{
-				MarkdownDescription: "Additional metadata for the discount. A JSON document. Use `jsonencode()` to set it. If you remove this attribute from the configuration, the API keeps the last value.",
+			"metadata": schema.MapAttribute{
+				MarkdownDescription: "Additional metadata for the discount. If you remove this attribute from the configuration, the API keeps the last value.",
 				Optional:            true,
 				Computed:            true,
-				PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				ElementType:         types.StringType,
+				PlanModifiers:       []planmodifier.Map{mapplanmodifier.UseStateForUnknown()},
 			},
 			"name": schema.StringAttribute{
-				Optional: true,
+				MarkdownDescription: "Name for the Discount.",
+				Optional:            true,
 			},
 			"per_customer_usage_limit": schema.Int64Attribute{
 				MarkdownDescription: "Maximum number of times a single customer may redeem this discount.\nMust be `<= usage_limit` when both are set.",

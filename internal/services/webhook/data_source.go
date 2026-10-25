@@ -15,9 +15,17 @@ func NewDataSource() datasource.DataSource {
 }
 
 var dataSourceSpec = &engine.DataSourceSpec{
-	Name:      "webhook",
-	ReadPath:  "webhooks/%s",
-	JSONAttrs: map[string]bool{},
+	Name:         "webhook",
+	ReadPath:     "webhooks/%s",
+	ParentParams: []string{},
+	Rules: engine.Rules{
+		JSONAttrs:   map[string]bool{},
+		KeepPrior:   map[string]bool{},
+		ListKeys:    map[string]string{},
+		StripPrefix: map[string]string{},
+		Aliases:     map[string]string{},
+		Decimals:    map[string]bool{},
+	},
 	Schema: schema.Schema{
 		MarkdownDescription: "Reads one webhook by its ID.",
 		Attributes: map[string]schema.Attribute{
@@ -71,6 +79,7 @@ func NewListDataSource() datasource.DataSource {
 var listDataSourceSpec = &engine.ListDataSourceSpec{
 	Name:            "webhooks",
 	ListPath:        "webhooks",
+	ParentParams:    []string{},
 	QueryParams:     []string{},
 	ItemsProperty:   "data",
 	PageNumberParam: "",
@@ -81,7 +90,14 @@ var listDataSourceSpec = &engine.ListDataSourceSpec{
 	ItemsAttr:       "items",
 	MaxItemsAttr:    "max_items",
 	DefaultMaxItems: 1000,
-	JSONAttrs:       map[string]bool{},
+	Rules: engine.Rules{
+		JSONAttrs:   map[string]bool{},
+		KeepPrior:   map[string]bool{},
+		ListKeys:    map[string]string{},
+		StripPrefix: map[string]string{},
+		Aliases:     map[string]string{},
+		Decimals:    map[string]bool{},
+	},
 	Schema: schema.Schema{
 		MarkdownDescription: "Lists webhooks.",
 		Attributes: map[string]schema.Attribute{
