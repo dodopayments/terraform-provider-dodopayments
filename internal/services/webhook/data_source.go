@@ -58,7 +58,7 @@ var dataSourceSpec = &engine.DataSourceSpec{
 				MarkdownDescription: "Status of the webhook.\n\nIf true, events are not sent.",
 				Computed:            true,
 			},
-			"filter_types": schema.ListAttribute{
+			"filter_types": schema.SetAttribute{
 				MarkdownDescription: "Filter events to the webhook.\n\nWebhook event will only be sent for events in the list.",
 				Computed:            true,
 				ElementType:         types.StringType,
@@ -140,7 +140,7 @@ var listDataSourceSpec = &engine.ListDataSourceSpec{
 							MarkdownDescription: "Status of the webhook.\n\nIf true, events are not sent.",
 							Computed:            true,
 						},
-						"filter_types": schema.ListAttribute{
+						"filter_types": schema.SetAttribute{
 							MarkdownDescription: "Filter events to the webhook.\n\nWebhook event will only be sent for events in the list.",
 							Computed:            true,
 							ElementType:         types.StringType,

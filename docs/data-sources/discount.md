@@ -47,7 +47,7 @@ Empty for discounts without any configured currency options. (see [below for nes
 - `per_customer_usage_limit` (Number) Maximum number of times a single customer may redeem this discount, if any.
 - `preserve_on_plan_change` (Boolean) Whether this discount should be preserved when a subscription changes plans.
 Default: false (discount is removed on plan change).
-- `restricted_to` (List of String) List of product IDs to which this discount is restricted.
+- `restricted_to` (Set of String) List of product IDs to which this discount is restricted.
 - `starts_at` (String) Optional date/time before which the discount is not yet active. NULL = active immediately.
 - `subscription_cycles` (Number) Number of subscription billing cycles this discount is valid for.
 If not provided, the discount will be applied indefinitely to
