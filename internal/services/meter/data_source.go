@@ -14,9 +14,17 @@ func NewDataSource() datasource.DataSource {
 }
 
 var dataSourceSpec = &engine.DataSourceSpec{
-	Name:      "meter",
-	ReadPath:  "meters/%s",
-	JSONAttrs: map[string]bool{"filter.clauses": true},
+	Name:         "meter",
+	ReadPath:     "meters/%s",
+	ParentParams: []string{},
+	Rules: engine.Rules{
+		JSONAttrs:   map[string]bool{"filter.clauses": true},
+		KeepPrior:   map[string]bool{},
+		ListKeys:    map[string]string{},
+		StripPrefix: map[string]string{},
+		Aliases:     map[string]string{},
+		Decimals:    map[string]bool{},
+	},
 	Schema: schema.Schema{
 		MarkdownDescription: "Reads one meter by its ID.",
 		Attributes: map[string]schema.Attribute{
@@ -83,6 +91,7 @@ func NewListDataSource() datasource.DataSource {
 var listDataSourceSpec = &engine.ListDataSourceSpec{
 	Name:            "meters",
 	ListPath:        "meters",
+	ParentParams:    []string{},
 	QueryParams:     []string{"archived", "locale"},
 	ItemsProperty:   "items",
 	PageNumberParam: "page_number",
@@ -93,7 +102,14 @@ var listDataSourceSpec = &engine.ListDataSourceSpec{
 	ItemsAttr:       "items",
 	MaxItemsAttr:    "max_items",
 	DefaultMaxItems: 1000,
-	JSONAttrs:       map[string]bool{"items.filter.clauses": true},
+	Rules: engine.Rules{
+		JSONAttrs:   map[string]bool{"items.filter.clauses": true},
+		KeepPrior:   map[string]bool{},
+		ListKeys:    map[string]string{},
+		StripPrefix: map[string]string{},
+		Aliases:     map[string]string{},
+		Decimals:    map[string]bool{},
+	},
 	Schema: schema.Schema{
 		MarkdownDescription: "Lists meters.",
 		Attributes: map[string]schema.Attribute{
