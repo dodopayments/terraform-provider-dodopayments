@@ -1,0 +1,31 @@
+name: Acceptance tests
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: acceptance
+  cancel-in-progress: false
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TF_ACC: '1'
+      DODO_PAYMENTS_API_KEY: ${{ secrets.DODO_PAYMENTS_API_KEY }}
+      DODO_PAYMENTS_ENVIRONMENT: test_mode
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.12.*'
+          terraform_wrapper: false
+      - run: go test ./internal/services/... -count=1 -v -timeout 30m
+      - name: Sweep objects that the tests left behind
+        if: always()
+        run: go test ./internal/sweep -count=1 -v -sweep=test_mode
