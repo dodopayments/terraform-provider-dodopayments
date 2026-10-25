@@ -14,7 +14,7 @@ import (
 
 func TestAccDiscount_basic(t *testing.T) {
 	suffix := sdkacctest.RandStringFromCharSet(8, sdkacctest.CharSetAlpha)
-	config := strings.NewReplacer("RANDOM", strings.ToUpper(suffix)).Replace("resource \"dodopayments_discount\" \"test\" {\n  amount = 100\n  name = \"tf-acc-RANDOM\"\n  type = \"percentage\"\n}\n\ndata \"dodopayments_discount\" \"test\" {\n  id = dodopayments_discount.test.id\n}\n\ndata \"dodopayments_discounts\" \"test\" {\n  max_items = 1\n  depends_on = [dodopayments_discount.test]\n}\n")
+	config := strings.NewReplacer("RANDOM", strings.ToUpper(suffix)).Replace("resource \"dodopayments_discount\" \"test\" {\n  amount = 100\n  name   = \"tf-acc-RANDOM\"\n  type   = \"percentage\"\n}\n\ndata \"dodopayments_discount\" \"test\" {\n  id = dodopayments_discount.test.id\n}\n\ndata \"dodopayments_discounts\" \"test\" {\n  max_items  = 1\n  depends_on = [dodopayments_discount.test]\n}\n")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },

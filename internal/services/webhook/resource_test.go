@@ -14,7 +14,7 @@ import (
 
 func TestAccWebhook_basic(t *testing.T) {
 	suffix := sdkacctest.RandStringFromCharSet(8, sdkacctest.CharSetAlpha)
-	config := strings.NewReplacer("RANDOM", strings.ToUpper(suffix)).Replace("resource \"dodopayments_webhook\" \"test\" {\n  url = \"https://example.com/tf-acc-RANDOM\"\n}\n\ndata \"dodopayments_webhook\" \"test\" {\n  id = dodopayments_webhook.test.id\n}\n\ndata \"dodopayments_webhooks\" \"test\" {\n  max_items = 1\n  depends_on = [dodopayments_webhook.test]\n}\n")
+	config := strings.NewReplacer("RANDOM", strings.ToUpper(suffix)).Replace("resource \"dodopayments_webhook\" \"test\" {\n  url = \"https://example.com/tf-acc-RANDOM\"\n}\n\ndata \"dodopayments_webhook\" \"test\" {\n  id = dodopayments_webhook.test.id\n}\n\ndata \"dodopayments_webhooks\" \"test\" {\n  max_items  = 1\n  depends_on = [dodopayments_webhook.test]\n}\n")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
