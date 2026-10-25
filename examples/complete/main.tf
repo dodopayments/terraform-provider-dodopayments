@@ -14,8 +14,8 @@ provider "dodopayments" {
 
 resource "dodopayments_discount" "example" {
   amount = 100
-  name = "example-discount"
-  type = "percentage"
+  name   = "example-discount"
+  type   = "percentage"
 }
 
 output "discount_id" {
@@ -27,7 +27,7 @@ data "dodopayments_discount" "example" {
 }
 
 data "dodopayments_discounts" "all" {
-  max_items = 10
+  max_items  = 10
   depends_on = [dodopayments_discount.example]
 }
 
@@ -36,9 +36,9 @@ output "discounts_count" {
 }
 
 resource "dodopayments_addon" "example" {
-  currency = "AED"
-  name = "example-addon"
-  price = 100
+  currency     = "AED"
+  name         = "example-addon"
+  price        = 100
   tax_category = "digital_products"
 }
 
@@ -51,7 +51,7 @@ data "dodopayments_addon" "example" {
 }
 
 data "dodopayments_addons" "all" {
-  max_items = 10
+  max_items  = 10
   depends_on = [dodopayments_addon.example]
 }
 
@@ -72,7 +72,7 @@ data "dodopayments_webhook" "example" {
 }
 
 data "dodopayments_webhooks" "all" {
-  max_items = 10
+  max_items  = 10
   depends_on = [dodopayments_webhook.example]
 }
 
@@ -84,9 +84,9 @@ resource "dodopayments_meter" "example" {
   aggregation = {
     type = "count"
   }
-  event_name = "example-meter"
+  event_name       = "example-meter"
   measurement_unit = "example-meter"
-  name = "example-meter"
+  name             = "example-meter"
 }
 
 output "meter_id" {
@@ -98,7 +98,7 @@ data "dodopayments_meter" "example" {
 }
 
 data "dodopayments_meters" "all" {
-  max_items = 10
+  max_items  = 10
   depends_on = [dodopayments_meter.example]
 }
 

@@ -13,6 +13,9 @@ import (
 	"github.com/dodopayments/terraform-provider-dodopayments/internal/provider"
 )
 
+// scripts/format runs this directive. It writes the registry docs in docs/.
+//go:generate go tool tfplugindocs generate --provider-name dodopayments
+
 // goreleaser sets version at release time.
 var version = internal.PackageVersion
 

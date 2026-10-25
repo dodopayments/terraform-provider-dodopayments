@@ -14,7 +14,7 @@ import (
 
 func TestAccMeter_basic(t *testing.T) {
 	suffix := sdkacctest.RandStringFromCharSet(8, sdkacctest.CharSetAlpha)
-	config := strings.NewReplacer("RANDOM", strings.ToUpper(suffix)).Replace("resource \"dodopayments_meter\" \"test\" {\n  aggregation = {\n    type = \"count\"\n  }\n  event_name = \"tf-acc-RANDOM\"\n  measurement_unit = \"tf-acc-RANDOM\"\n  name = \"tf-acc-RANDOM\"\n}\n\ndata \"dodopayments_meter\" \"test\" {\n  id = dodopayments_meter.test.id\n}\n\ndata \"dodopayments_meters\" \"test\" {\n  max_items = 1\n  depends_on = [dodopayments_meter.test]\n}\n")
+	config := strings.NewReplacer("RANDOM", strings.ToUpper(suffix)).Replace("resource \"dodopayments_meter\" \"test\" {\n  aggregation = {\n    type = \"count\"\n  }\n  event_name       = \"tf-acc-RANDOM\"\n  measurement_unit = \"tf-acc-RANDOM\"\n  name             = \"tf-acc-RANDOM\"\n}\n\ndata \"dodopayments_meter\" \"test\" {\n  id = dodopayments_meter.test.id\n}\n\ndata \"dodopayments_meters\" \"test\" {\n  max_items  = 1\n  depends_on = [dodopayments_meter.test]\n}\n")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },

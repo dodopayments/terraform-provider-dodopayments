@@ -5,3 +5,6 @@ cd "$(dirname "$0")/.."
 
 go mod tidy
 gofmt -w .
+# When docs are on, main.go has a go:generate directive that runs tfplugindocs and writes docs/.
+# tfplugindocs builds the provider and reads its schema with Terraform. It downloads Terraform when Terraform is not installed.
+go generate .
