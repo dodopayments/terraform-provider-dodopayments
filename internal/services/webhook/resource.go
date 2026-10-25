@@ -83,7 +83,7 @@ var resourceSpec = &engine.ResourceSpec{
 				Computed:            true,
 				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
-			"filter_types": schema.ListAttribute{
+			"filter_types": schema.SetAttribute{
 				MarkdownDescription: "Filter events to the webhook.\n\nWebhook event will only be sent for events in the list.",
 				Optional:            true,
 				ElementType:         types.StringType,

@@ -23,7 +23,7 @@ var dataSourceSpec = &engine.DataSourceSpec{
 	Rules: engine.Rules{
 		JSONAttrs:   map[string]bool{},
 		KeepPrior:   map[string]bool{},
-		ListKeys:    map[string]string{},
+		ListKeys:    map[string]string{"currency_options": "currency"},
 		StripPrefix: map[string]string{},
 		Aliases:     map[string]string{},
 		Decimals:    map[string]bool{},
@@ -68,7 +68,7 @@ var dataSourceSpec = &engine.DataSourceSpec{
 				MarkdownDescription: "Whether this discount should be preserved when a subscription changes plans.\nDefault: false (discount is removed on plan change).",
 				Computed:            true,
 			},
-			"restricted_to": schema.ListAttribute{
+			"restricted_to": schema.SetAttribute{
 				MarkdownDescription: "List of product IDs to which this discount is restricted.",
 				Computed:            true,
 				ElementType:         types.StringType,
@@ -155,7 +155,7 @@ var listDataSourceSpec = &engine.ListDataSourceSpec{
 	Rules: engine.Rules{
 		JSONAttrs:   map[string]bool{},
 		KeepPrior:   map[string]bool{},
-		ListKeys:    map[string]string{},
+		ListKeys:    map[string]string{"currency_options": "currency"},
 		StripPrefix: map[string]string{},
 		Aliases:     map[string]string{},
 		Decimals:    map[string]bool{},
@@ -221,7 +221,7 @@ var listDataSourceSpec = &engine.ListDataSourceSpec{
 							MarkdownDescription: "Whether this discount should be preserved when a subscription changes plans.\nDefault: false (discount is removed on plan change).",
 							Computed:            true,
 						},
-						"restricted_to": schema.ListAttribute{
+						"restricted_to": schema.SetAttribute{
 							MarkdownDescription: "List of product IDs to which this discount is restricted.",
 							Computed:            true,
 							ElementType:         types.StringType,

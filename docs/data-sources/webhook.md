@@ -36,7 +36,7 @@ data "dodopayments_webhook" "example" {
 - `disabled` (Boolean) Status of the webhook.
 
 If true, events are not sent.
-- `filter_types` (List of String) Filter events to the webhook.
+- `filter_types` (Set of String) Filter events to the webhook.
 
 Webhook event will only be sent for events in the list.
 - `metadata` (Map of String) Metadata of the webhook.

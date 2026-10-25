@@ -51,7 +51,7 @@ customers are attached via `POST /discounts/{id}/customers`. If you remove this 
 Must be `<= usage_limit` when both are set.
 - `preserve_on_plan_change` (Boolean) Whether this discount should be preserved when a subscription changes plans.
 Default: false (discount is removed on plan change). If you remove this attribute from the configuration, the API keeps the last value.
-- `restricted_to` (List of String) List of product IDs to restrict usage (if any). If you remove this attribute from the configuration, the API keeps the last value.
+- `restricted_to` (Set of String) List of product IDs to restrict usage (if any). If you remove this attribute from the configuration, the API keeps the last value.
 - `starts_at` (String) When the discount becomes active, if scheduled for the future.
 NULL = active immediately. Must be strictly before `expires_at` when both are set.
 - `subscription_cycles` (Number) Number of subscription billing cycles this discount is valid for.
