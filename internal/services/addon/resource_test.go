@@ -14,7 +14,7 @@ import (
 
 func TestAccAddon_basic(t *testing.T) {
 	suffix := sdkacctest.RandStringFromCharSet(8, sdkacctest.CharSetAlpha)
-	config := strings.NewReplacer("RANDOM", strings.ToUpper(suffix)).Replace("resource \"dodopayments_addon\" \"test\" {\n  currency = \"AED\"\n  name = \"tf-acc-RANDOM\"\n  price = 100\n  tax_category = \"digital_products\"\n}\n\ndata \"dodopayments_addon\" \"test\" {\n  id = dodopayments_addon.test.id\n}\n\ndata \"dodopayments_addons\" \"test\" {\n  max_items = 1\n  depends_on = [dodopayments_addon.test]\n}\n")
+	config := strings.NewReplacer("RANDOM", strings.ToUpper(suffix)).Replace("resource \"dodopayments_addon\" \"test\" {\n  currency     = \"AED\"\n  name         = \"tf-acc-RANDOM\"\n  price        = 100\n  tax_category = \"digital_products\"\n}\n\ndata \"dodopayments_addon\" \"test\" {\n  id = dodopayments_addon.test.id\n}\n\ndata \"dodopayments_addons\" \"test\" {\n  max_items  = 1\n  depends_on = [dodopayments_addon.test]\n}\n")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { acctest.PreCheck(t) },
