@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -42,7 +43,7 @@ var resourceSpec = &engine.ResourceSpec{
 	Rules: engine.Rules{
 		JSONAttrs:   map[string]bool{},
 		KeepPrior:   map[string]bool{},
-		ListKeys:    map[string]string{},
+		ListKeys:    map[string]string{"currency_options": "currency"},
 		StripPrefix: map[string]string{},
 		Aliases:     map[string]string{},
 		Decimals:    map[string]bool{},
@@ -157,12 +158,12 @@ var resourceSpec = &engine.ResourceSpec{
 				Computed:            true,
 				PlanModifiers:       []planmodifier.Bool{boolplanmodifier.UseStateForUnknown()},
 			},
-			"restricted_to": schema.ListAttribute{
+			"restricted_to": schema.SetAttribute{
 				MarkdownDescription: "List of product IDs to restrict usage (if any). If you remove this attribute from the configuration, the API keeps the last value.",
 				Optional:            true,
 				Computed:            true,
 				ElementType:         types.StringType,
-				PlanModifiers:       []planmodifier.List{listplanmodifier.UseStateForUnknown()},
+				PlanModifiers:       []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
 			},
 			"starts_at": schema.StringAttribute{
 				MarkdownDescription: "When the discount becomes active, if scheduled for the future.\nNULL = active immediately. Must be strictly before `expires_at` when both are set.",

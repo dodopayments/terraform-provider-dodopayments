@@ -31,7 +31,7 @@ resource "dodopayments_webhook" "example" {
 - `disabled` (Boolean) Create the webhook in a disabled state.
 
 Default is false. If you remove this attribute from the configuration, the API keeps the last value.
-- `filter_types` (List of String) Filter events to the webhook.
+- `filter_types` (Set of String) Filter events to the webhook.
 
 Webhook event will only be sent for events in the list.
 - `headers` (Map of String, Sensitive) Custom headers to be passed. A change to this value destroys the resource and creates a new resource.
