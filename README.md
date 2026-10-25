@@ -23,23 +23,38 @@ provider "dodopayments" {
 
 ## Resources, data sources, ephemeral resources and actions
 
-### Catalog
+### Products
 
 - resource `dodopayments_product`, data source `dodopayments_product`, data source `dodopayments_products`, list resource `dodopayments_product`, action `dodopayments_product_unarchive`
-- resource `dodopayments_product_localized_price`, data source `dodopayments_product_localized_price`, data source `dodopayments_product_localized_prices`, list resource `dodopayments_product_localized_price`
-- resource `dodopayments_addon`, data source `dodopayments_addon`, data source `dodopayments_addons`, list resource `dodopayments_addon`, action `dodopayments_addon_unarchive`
-- resource `dodopayments_brand`, data source `dodopayments_brand`, data source `dodopayments_brands`, list resource `dodopayments_brand`
 - resource `dodopayments_product_collection`, data source `dodopayments_product_collection`, data source `dodopayments_product_collections`, list resource `dodopayments_product_collection`, action `dodopayments_product_collection_unarchive`
 
-### Billing
+### Pricing
+
+- resource `dodopayments_product_localized_price`, data source `dodopayments_product_localized_price`, data source `dodopayments_product_localized_prices`, list resource `dodopayments_product_localized_price`
+
+### Discounts
 
 - resource `dodopayments_discount`, data source `dodopayments_discount`, data source `dodopayments_discounts`, list resource `dodopayments_discount`
-- resource `dodopayments_meter`, data source `dodopayments_meter`, data source `dodopayments_meters`, list resource `dodopayments_meter`, action `dodopayments_meter_unarchive`
-- resource `dodopayments_credit_entitlement`, data source `dodopayments_credit_entitlement`, data source `dodopayments_credit_entitlements`, list resource `dodopayments_credit_entitlement`, action `dodopayments_credit_entitlement_undelete`
+
+### Subscriptions
+
+- resource `dodopayments_addon`, data source `dodopayments_addon`, data source `dodopayments_addons`, list resource `dodopayments_addon`, action `dodopayments_addon_unarchive`
+
+### Account Management
+
+- resource `dodopayments_brand`, data source `dodopayments_brand`, data source `dodopayments_brands`, list resource `dodopayments_brand`
 
 ### Webhooks
 
 - resource `dodopayments_webhook`, data source `dodopayments_webhook`, data source `dodopayments_webhooks`, list resource `dodopayments_webhook`, ephemeral resource `dodopayments_webhook_secret`
+
+### Usage Based Billing
+
+- resource `dodopayments_meter`, data source `dodopayments_meter`, data source `dodopayments_meters`, list resource `dodopayments_meter`, action `dodopayments_meter_unarchive`
+
+### Credit-Based Billing
+
+- resource `dodopayments_credit_entitlement`, data source `dodopayments_credit_entitlement`, data source `dodopayments_credit_entitlements`, list resource `dodopayments_credit_entitlement`, action `dodopayments_credit_entitlement_undelete`
 
 ### Entitlements
 
