@@ -1,0 +1,32 @@
+---
+page_title: "Provider: Dodo Payments"
+description: |-
+  Manages Dodo Payments objects with Terraform or OpenTofu.
+---
+
+# Dodo Payments Provider
+
+The Dodo Payments provider manages Dodo Payments objects with Terraform or OpenTofu 1.12 or later.
+
+## Example Usage
+
+{{ tffile "examples/provider/provider.tf" }}
+
+## Authentication
+
+Set the API key in the `DODO_PAYMENTS_API_KEY` environment variable. Do not write the API key in the configuration.
+Set `environment`, or the `DODO_PAYMENTS_ENVIRONMENT` environment variable, to select test mode or live mode.
+Each API key works in one mode only. The [test mode and live mode guide](guides/test-and-live-mode) shows two configurations.
+
+## Retries and rate limits
+
+The provider sends a request again when the API returns HTTP 408, 409, 429 or 5xx, or when the connection fails.
+On HTTP 429, the provider waits until the rate limit window resets. Set `max_retries` to change the number of retries.
+A large configuration can reach the rate limit. Run `terraform apply -parallelism=4` to send fewer requests at the same time.
+
+## Errors
+
+Each error from the API shows the API message, the HTTP status, the error code and the request, for example:
+`Product not found (HTTP 404, error code NOT_FOUND, request GET /products/pdt_123)`.
+
+{{ .SchemaMarkdown | trimspace }}

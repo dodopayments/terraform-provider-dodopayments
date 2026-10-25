@@ -14,9 +14,17 @@ func NewDataSource() datasource.DataSource {
 }
 
 var dataSourceSpec = &engine.DataSourceSpec{
-	Name:      "addon",
-	ReadPath:  "addons/%s",
-	JSONAttrs: map[string]bool{},
+	Name:         "addon",
+	ReadPath:     "addons/%s",
+	ParentParams: []string{},
+	Rules: engine.Rules{
+		JSONAttrs:   map[string]bool{},
+		KeepPrior:   map[string]bool{},
+		ListKeys:    map[string]string{},
+		StripPrefix: map[string]string{},
+		Aliases:     map[string]string{},
+		Decimals:    map[string]bool{},
+	},
 	Schema: schema.Schema{
 		MarkdownDescription: "Reads one addon by its ID.",
 		Attributes: map[string]schema.Attribute{
@@ -72,6 +80,7 @@ func NewListDataSource() datasource.DataSource {
 var listDataSourceSpec = &engine.ListDataSourceSpec{
 	Name:            "addons",
 	ListPath:        "addons",
+	ParentParams:    []string{},
 	QueryParams:     []string{"archived", "locale"},
 	ItemsProperty:   "items",
 	PageNumberParam: "page_number",
@@ -82,7 +91,14 @@ var listDataSourceSpec = &engine.ListDataSourceSpec{
 	ItemsAttr:       "items",
 	MaxItemsAttr:    "max_items",
 	DefaultMaxItems: 1000,
-	JSONAttrs:       map[string]bool{},
+	Rules: engine.Rules{
+		JSONAttrs:   map[string]bool{},
+		KeepPrior:   map[string]bool{},
+		ListKeys:    map[string]string{},
+		StripPrefix: map[string]string{},
+		Aliases:     map[string]string{},
+		Decimals:    map[string]bool{},
+	},
 	Schema: schema.Schema{
 		MarkdownDescription: "Lists addons.",
 		Attributes: map[string]schema.Attribute{

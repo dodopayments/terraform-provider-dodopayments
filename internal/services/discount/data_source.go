@@ -17,14 +17,22 @@ func NewDataSource() datasource.DataSource {
 }
 
 var dataSourceSpec = &engine.DataSourceSpec{
-	Name:      "discount",
-	ReadPath:  "discounts/%s",
-	JSONAttrs: map[string]bool{"metadata": true},
+	Name:         "discount",
+	ReadPath:     "discounts/%s",
+	ParentParams: []string{},
+	Rules: engine.Rules{
+		JSONAttrs:   map[string]bool{},
+		KeepPrior:   map[string]bool{},
+		ListKeys:    map[string]string{"currency_options": "currency"},
+		StripPrefix: map[string]string{},
+		Aliases:     map[string]string{},
+		Decimals:    map[string]bool{},
+	},
 	Schema: schema.Schema{
 		MarkdownDescription: "Reads one discount by its ID.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				MarkdownDescription: "The ID of the object.",
+				MarkdownDescription: "The ID of the discount.",
 				Required:            true,
 			},
 			"amount": schema.Int64Attribute{
@@ -51,15 +59,16 @@ var dataSourceSpec = &engine.DataSourceSpec{
 				MarkdownDescription: "The unique discount ID.",
 				Computed:            true,
 			},
-			"metadata": schema.StringAttribute{
-				MarkdownDescription: "Arbitrary key-value metadata. Values can be string, integer, number, or boolean. A JSON document. Use `jsonencode()` to set it.",
+			"metadata": schema.MapAttribute{
+				MarkdownDescription: "Arbitrary key-value metadata. Values can be string, integer, number, or boolean.",
 				Computed:            true,
+				ElementType:         types.StringType,
 			},
 			"preserve_on_plan_change": schema.BoolAttribute{
 				MarkdownDescription: "Whether this discount should be preserved when a subscription changes plans.\nDefault: false (discount is removed on plan change).",
 				Computed:            true,
 			},
-			"restricted_to": schema.ListAttribute{
+			"restricted_to": schema.SetAttribute{
 				MarkdownDescription: "List of product IDs to which this discount is restricted.",
 				Computed:            true,
 				ElementType:         types.StringType,
@@ -132,6 +141,7 @@ func NewListDataSource() datasource.DataSource {
 var listDataSourceSpec = &engine.ListDataSourceSpec{
 	Name:            "discounts",
 	ListPath:        "discounts",
+	ParentParams:    []string{},
 	QueryParams:     []string{"active", "code", "discount_type", "product_id"},
 	ItemsProperty:   "items",
 	PageNumberParam: "page_number",
@@ -142,7 +152,14 @@ var listDataSourceSpec = &engine.ListDataSourceSpec{
 	ItemsAttr:       "items",
 	MaxItemsAttr:    "max_items",
 	DefaultMaxItems: 1000,
-	JSONAttrs:       map[string]bool{"items.metadata": true},
+	Rules: engine.Rules{
+		JSONAttrs:   map[string]bool{},
+		KeepPrior:   map[string]bool{},
+		ListKeys:    map[string]string{"currency_options": "currency"},
+		StripPrefix: map[string]string{},
+		Aliases:     map[string]string{},
+		Decimals:    map[string]bool{},
+	},
 	Schema: schema.Schema{
 		MarkdownDescription: "Lists discounts.",
 		Attributes: map[string]schema.Attribute{
@@ -195,15 +212,16 @@ var listDataSourceSpec = &engine.ListDataSourceSpec{
 							MarkdownDescription: "The unique discount ID.",
 							Computed:            true,
 						},
-						"metadata": schema.StringAttribute{
-							MarkdownDescription: "Arbitrary key-value metadata. Values can be string, integer, number, or boolean. A JSON document. Use `jsonencode()` to set it.",
+						"metadata": schema.MapAttribute{
+							MarkdownDescription: "Arbitrary key-value metadata. Values can be string, integer, number, or boolean.",
 							Computed:            true,
+							ElementType:         types.StringType,
 						},
 						"preserve_on_plan_change": schema.BoolAttribute{
 							MarkdownDescription: "Whether this discount should be preserved when a subscription changes plans.\nDefault: false (discount is removed on plan change).",
 							Computed:            true,
 						},
-						"restricted_to": schema.ListAttribute{
+						"restricted_to": schema.SetAttribute{
 							MarkdownDescription: "List of product IDs to which this discount is restricted.",
 							Computed:            true,
 							ElementType:         types.StringType,
