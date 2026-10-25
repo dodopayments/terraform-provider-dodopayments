@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+test -z "$(gofmt -l .)" || { gofmt -l . >&2; echo "Run scripts/format." >&2; exit 1; }
+go vet ./...
