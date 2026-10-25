@@ -8,3 +8,7 @@ gofmt -w .
 # When docs are on, main.go has a go:generate directive that runs tfplugindocs and writes docs/.
 # tfplugindocs builds the provider and reads its schema with Terraform. It downloads Terraform when Terraform is not installed.
 go generate .
+# terraform fmt aligns the examples. The docs show the examples, so they must have the canonical format.
+if command -v terraform >/dev/null 2>&1; then
+  terraform fmt -recursive examples
+fi
