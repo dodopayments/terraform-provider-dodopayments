@@ -6,6 +6,7 @@ import (
 	"github.com/dodopayments/terraform-provider-dodopayments/internal/engine"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -20,6 +21,7 @@ func NewResource() resource.Resource {
 var resourceSpec = &engine.ResourceSpec{
 	Name:             "addon",
 	IDProperty:       "id",
+	ParentParams:     []string{},
 	CreateMethod:     "POST",
 	CreatePath:       "addons",
 	CreatePathParam:  "",
@@ -32,10 +34,30 @@ var resourceSpec = &engine.ResourceSpec{
 	UpdateFields:     []string{"currency", "description", "image_id", "name", "price", "tax_category"},
 	UpdateOnlyFields: []string{"image_id"},
 	UpdateFull:       false,
-	JSONAttrs:        map[string]bool{},
+	Rules: engine.Rules{
+		JSONAttrs:   map[string]bool{},
+		KeepPrior:   map[string]bool{"image_id": true},
+		ListKeys:    map[string]string{},
+		StripPrefix: map[string]string{},
+		Aliases:     map[string]string{},
+		Decimals:    map[string]bool{},
+	},
 	WriteOnly:        []string{},
+	MergeMaps:        map[string]bool{},
 	ReadAfterWrite:   false,
+	ArchivedProperty: "",
+	DestroyWarning:   "",
+	ReplaceFields:    []string{},
+	IdentitySchema: identityschema.Schema{
+		Attributes: map[string]identityschema.Attribute{
+			"id": identityschema.StringAttribute{
+				Description:       "The ID of the addon.",
+				RequiredForImport: true,
+			},
+		},
+	},
 	Schema: schema.Schema{
+		Version:             0,
 		MarkdownDescription: "Manages a addon.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

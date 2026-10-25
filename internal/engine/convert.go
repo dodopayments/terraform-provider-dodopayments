@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
@@ -39,7 +41,8 @@ func decodeJSON(raw []byte) (any, error) {
 }
 
 // toJSON converts a Terraform value to a value for encoding/json.
-// When keepNull is true, a null value becomes a JSON null. Otherwise it is omitted.
+// When keepNull is true, a null value becomes a JSON null. Otherwise it is omitted. A null list, set or map
+// entry stays a JSON null. An unset child of an entry is omitted, because a merge patch replaces the entry.
 func toJSON(v tftypes.Value, path string, jsonAttrs map[string]bool, keepNull bool) (any, error) {
 	if !v.IsKnown() {
 		return omit, nil
@@ -75,7 +78,11 @@ func toJSON(v tftypes.Value, path string, jsonAttrs map[string]bool, keepNull bo
 		}
 		out := make([]any, 0, len(items))
 		for _, item := range items {
-			c, err := toJSON(item, path, jsonAttrs, true)
+			if item.IsKnown() && item.IsNull() {
+				out = append(out, nil)
+				continue
+			}
+			c, err := toJSON(item, path, jsonAttrs, false)
 			if err != nil {
 				return nil, err
 			}
@@ -92,7 +99,11 @@ func toJSON(v tftypes.Value, path string, jsonAttrs map[string]bool, keepNull bo
 		}
 		out := map[string]any{}
 		for k, child := range m {
-			c, err := toJSON(child, path, jsonAttrs, true)
+			if child.IsKnown() && child.IsNull() {
+				out[k] = nil
+				continue
+			}
+			c, err := toJSON(child, path, jsonAttrs, false)
 			if err != nil {
 				return nil, err
 			}
@@ -256,41 +267,193 @@ func jsonEqual(a, b string) bool {
 	return reflect.DeepEqual(va, vb)
 }
 
-// keepEquivalentJSON returns prior for a JSON attribute when next holds the same JSON value.
-// This keeps the text that the configuration set, for example its whitespace and its key order.
-func keepEquivalentJSON(prior, next tftypes.Value, path string, jsonAttrs map[string]bool) tftypes.Value {
-	if !prior.IsKnown() || prior.IsNull() || !next.IsKnown() || next.IsNull() || !prior.Type().Equal(next.Type()) {
+var decimalPattern = regexp.MustCompile(`^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$`)
+
+// decimalEqual reports whether two strings hold the same decimal number, for example "10.50" and "10.5".
+func decimalEqual(a, b string) bool {
+	if !decimalPattern.MatchString(a) || !decimalPattern.MatchString(b) {
+		return false
+	}
+	x, okA := new(big.Rat).SetString(a)
+	y, okB := new(big.Rat).SetString(b)
+	return okA && okB && x.Cmp(y) == 0
+}
+
+// Rules tell how an API value maps to an attribute value. Paths are dotted attribute names. List items have no index.
+type Rules struct {
+	// JSONAttrs are the attribute paths that hold a JSON document as a string.
+	JSONAttrs map[string]bool
+	// KeepPrior are input paths that the API does not return. The provider keeps the configured value.
+	KeepPrior map[string]bool
+	// ListKeys maps a list path to the attribute that identifies each item. The provider keeps the configured order.
+	ListKeys map[string]string
+	// StripPrefix maps a string path to a prefix that the API adds to the configured value.
+	StripPrefix map[string]string
+	// Aliases maps an attribute path to the response property in the same object that holds its value.
+	Aliases map[string]string
+	// Decimals are the string paths that hold a decimal number. The provider keeps "10.50" when the API returns "10.5".
+	Decimals map[string]bool
+}
+
+// applyAliases copies each aliased response property to the attribute name, in place.
+func (rules *Rules) applyAliases(out any) {
+	for target, source := range rules.Aliases {
+		setAlias(out, strings.Split(target, "."), source)
+	}
+}
+
+func setAlias(v any, path []string, source string) {
+	switch x := v.(type) {
+	case []any:
+		for _, item := range x {
+			setAlias(item, path, source)
+		}
+	case map[string]any:
+		if len(path) == 1 {
+			if cur, ok := x[path[0]]; !ok || cur == nil {
+				if s, ok := x[source]; ok {
+					x[path[0]] = s
+				}
+			}
+			return
+		}
+		setAlias(x[path[0]], path[1:], source)
+	}
+}
+
+// reconcile returns the value to store at path. prior is the planned or the stored value, or null on import.
+// It removes the prefix that the API adds to a value. It keeps prior when next holds the same value in another
+// form: equivalent JSON, an equal decimal, or the same list items in another order. It also keeps an input that
+// the API does not return.
+func (rules *Rules) reconcile(prior, next tftypes.Value, path string) tftypes.Value {
+	hasPrior := prior.IsKnown() && !prior.IsNull() && prior.Type().Equal(next.Type())
+	if !next.IsKnown() {
+		return next
+	}
+	if next.IsNull() {
+		if hasPrior && rules.KeepPrior[path] {
+			return prior
+		}
 		return next
 	}
 	switch t := next.Type().(type) {
 	case tftypes.Object:
 		var p, n map[string]tftypes.Value
-		if prior.As(&p) != nil || next.As(&n) != nil {
+		if next.As(&n) != nil || hasPrior && prior.As(&p) != nil {
 			return next
 		}
+		// As returns the internal map of next, so the result goes in a new map.
+		out := make(map[string]tftypes.Value, len(n))
 		for k, v := range n {
-			if pv, ok := p[k]; ok {
-				n[k] = keepEquivalentJSON(pv, v, childPath(path, k), jsonAttrs)
+			pv, ok := p[k]
+			if !ok {
+				pv = tftypes.NewValue(v.Type(), nil)
+			}
+			out[k] = rules.reconcile(pv, v, childPath(path, k))
+		}
+		return tftypes.NewValue(t, out)
+	case tftypes.List, tftypes.Set:
+		var p, n []tftypes.Value
+		if next.As(&n) != nil || hasPrior && prior.As(&p) != nil {
+			return next
+		}
+		_, isList := t.(tftypes.List)
+		key := rules.ListKeys[path]
+		if isList && key != "" {
+			n = alignByKey(p, n, key)
+		} else {
+			n = append([]tftypes.Value(nil), n...)
+		}
+		byKey := map[string]tftypes.Value{}
+		if key != "" {
+			for _, item := range p {
+				if k := stringAttr(item, key); k != "" {
+					byKey[k] = item
+				}
 			}
 		}
+		used := make([]bool, len(p))
+		for i := range n {
+			pv := tftypes.NewValue(n[i].Type(), nil)
+			switch {
+			case key != "":
+				if item, ok := byKey[stringAttr(n[i], key)]; ok {
+					pv = item
+				}
+			case isList:
+				if len(p) == len(n) {
+					pv = p[i]
+				}
+			default:
+				// A set has no order. The prior element is the one that the API value matches after reconciliation.
+				for j := range p {
+					if !used[j] && rules.reconcile(p[j], n[i], path).Equal(p[j]) {
+						pv, used[j] = p[j], true
+						break
+					}
+				}
+			}
+			n[i] = rules.reconcile(pv, n[i], path)
+		}
 		return tftypes.NewValue(t, n)
-	case tftypes.List:
-		var p, n []tftypes.Value
-		if prior.As(&p) != nil || next.As(&n) != nil || len(p) != len(n) {
+	case tftypes.Map:
+		var p, n map[string]tftypes.Value
+		if next.As(&n) != nil || hasPrior && prior.As(&p) != nil {
 			return next
 		}
-		for i := range n {
-			n[i] = keepEquivalentJSON(p[i], n[i], path, jsonAttrs)
+		out := make(map[string]tftypes.Value, len(n))
+		for k, v := range n {
+			pv, ok := p[k]
+			if !ok {
+				pv = tftypes.NewValue(v.Type(), nil)
+			}
+			out[k] = rules.reconcile(pv, v, path)
 		}
-		return tftypes.NewValue(t, n)
+		return tftypes.NewValue(t, out)
 	}
-	if jsonAttrs[path] && next.Type().Is(tftypes.String) {
-		var ps, ns string
-		if prior.As(&ps) == nil && next.As(&ns) == nil && jsonEqual(ps, ns) {
-			return prior
-		}
+	if !next.Type().Is(tftypes.String) {
+		return next
+	}
+	var ps, ns string
+	if next.As(&ns) != nil {
+		return next
+	}
+	if prefix := rules.StripPrefix[path]; prefix != "" && strings.HasPrefix(ns, prefix) {
+		ns = strings.TrimPrefix(ns, prefix)
+		next = tftypes.NewValue(tftypes.String, ns)
+	}
+	if !hasPrior || prior.As(&ps) != nil || ps == ns {
+		return next
+	}
+	if rules.JSONAttrs[path] && jsonEqual(ps, ns) || rules.Decimals[path] && decimalEqual(ps, ns) {
+		return prior
 	}
 	return next
+}
+
+// alignByKey orders the items of next like the items of prior with the same key. New items go last, in API order.
+func alignByKey(prior, next []tftypes.Value, key string) []tftypes.Value {
+	used := make([]bool, len(next))
+	out := make([]tftypes.Value, 0, len(next))
+	for _, p := range prior {
+		k := stringAttr(p, key)
+		if k == "" {
+			continue
+		}
+		for i, n := range next {
+			if !used[i] && stringAttr(n, key) == k {
+				out = append(out, n)
+				used[i] = true
+				break
+			}
+		}
+	}
+	for i, n := range next {
+		if !used[i] {
+			out = append(out, n)
+		}
+	}
+	return out
 }
 
 func isEmptyValue(v tftypes.Value) bool {
@@ -314,4 +477,31 @@ func isEmptyValue(v tftypes.Value) bool {
 		return v.As(&b) == nil && !b
 	}
 	return false
+}
+
+func stringAttr(v tftypes.Value, name string) string {
+	if !v.IsKnown() || v.IsNull() {
+		return ""
+	}
+	var attrs map[string]tftypes.Value
+	if err := v.As(&attrs); err != nil {
+		return ""
+	}
+	var s string
+	if a, ok := attrs[name]; ok && a.IsKnown() && !a.IsNull() {
+		_ = a.As(&s)
+	}
+	return s
+}
+
+// pathArgs returns the escaped values for the path verbs: the parent attributes of v and then id.
+func pathArgs(template string, v tftypes.Value, parents []string, id string) []any {
+	args := make([]any, 0, len(parents)+1)
+	for _, p := range parents {
+		args = append(args, escape(stringAttr(v, p)))
+	}
+	if strings.Count(template, "%s") > len(args) {
+		args = append(args, escape(id))
+	}
+	return args
 }

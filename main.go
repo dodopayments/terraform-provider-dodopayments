@@ -14,7 +14,8 @@ import (
 )
 
 // scripts/format runs this directive. It writes the registry docs in docs/.
-//go:generate go tool tfplugindocs generate --provider-name dodopayments
+// Actions and list resources need Terraform 1.14 or later in the schema export, so tfplugindocs downloads that version.
+//go:generate go tool tfplugindocs generate --provider-name dodopayments --tf-version 1.14.0
 
 // goreleaser sets version at release time.
 var version = internal.PackageVersion
