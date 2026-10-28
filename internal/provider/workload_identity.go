@@ -4,6 +4,7 @@ package provider
 
 import (
 	"os"
+	"sync"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -85,6 +86,12 @@ func workloadIdentityConfig(cfg map[string]tftypes.Value) (map[string]tftypes.Va
 	return block, true
 }
 
+type workloadIdentityKey struct{ id, source, tokenFile, audience string }
+
+// workloadIdentityOptions keeps one option for each configuration. Terraform configures the provider many times in
+// one process, and each new option exchanges a new access token. The API sets a limit on the active tokens of a mapping.
+var workloadIdentityOptions sync.Map
+
 func workloadIdentityOption(block map[string]tftypes.Value) (option.RequestOption, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	attr := func(name string) path.Path { return path.Root("workload_identity").AtName(name) }
@@ -137,5 +144,10 @@ func workloadIdentityOption(block map[string]tftypes.Value) (option.RequestOptio
 		diags.AddAttributeError(attr("token_source"), "Invalid token source", "The token source "+source+" is not known.")
 		return nil, diags
 	}
-	return option.WithWorkloadIdentity(option.WorkloadIdentity{IdentityProviderID: id, Provider: provider}), diags
+	key := workloadIdentityKey{id: id, source: source, tokenFile: tokenFile, audience: audience}
+	if opt, ok := workloadIdentityOptions.Load(key); ok {
+		return opt.(option.RequestOption), diags
+	}
+	opt, _ := workloadIdentityOptions.LoadOrStore(key, option.WithWorkloadIdentity(option.WorkloadIdentity{IdentityProviderID: id, Provider: provider}))
+	return opt.(option.RequestOption), diags
 }
