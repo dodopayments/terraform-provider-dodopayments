@@ -27,11 +27,13 @@ func client() (*sdk.Client, error) {
 	if os.Getenv("DODO_PAYMENTS_ENVIRONMENT") != "test_mode" {
 		return nil, fmt.Errorf("sweepers delete objects. Set DODO_PAYMENTS_ENVIRONMENT=test_mode.")
 	}
-	key := os.Getenv("DODO_PAYMENTS_API_KEY")
-	if key == "" {
-		return nil, fmt.Errorf("set DODO_PAYMENTS_API_KEY to run the sweepers.")
+	auth := option.WithWorkloadIdentity(option.WorkloadIdentity{})
+	if key := os.Getenv("DODO_PAYMENTS_API_KEY"); key != "" {
+		auth = option.WithBearerToken(key)
+	} else if os.Getenv("DODO_PAYMENTS_IDENTITY_PROVIDER_ID") == "" {
+		return nil, fmt.Errorf("set DODO_PAYMENTS_API_KEY or DODO_PAYMENTS_IDENTITY_PROVIDER_ID to run the sweepers.")
 	}
-	return sdk.NewClient(option.WithBearerToken(key), option.WithBaseURL("https://test.dodopayments.com"), option.WithMaxRetries(5), option.WithMiddleware(engine.RateLimitMiddleware)), nil
+	return sdk.NewClient(auth, option.WithBaseURL("https://test.dodopayments.com"), option.WithMaxRetries(5), option.WithMiddleware(engine.RateLimitMiddleware)), nil
 }
 
 // addSweeper registers a sweeper. The sweepers in dependencies run first.

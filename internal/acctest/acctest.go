@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
@@ -37,25 +38,34 @@ func ProtoV6ProviderFactoriesWithEcho() map[string]func() (tfprotov6.ProviderSer
 	return out
 }
 
-// PreCheck stops the test when the environment does not have an API key for a test environment.
+// PreCheck stops the test when the environment does not have an API key or a workload identity provider for a test environment.
 func PreCheck(t *testing.T) {
 	t.Helper()
-	if os.Getenv("DODO_PAYMENTS_API_KEY") == "" {
-		t.Fatal("Set DODO_PAYMENTS_API_KEY to run acceptance tests.")
+	if os.Getenv("DODO_PAYMENTS_API_KEY") == "" && os.Getenv("DODO_PAYMENTS_IDENTITY_PROVIDER_ID") == "" {
+		t.Fatal("Set DODO_PAYMENTS_API_KEY or DODO_PAYMENTS_IDENTITY_PROVIDER_ID to run acceptance tests.")
 	}
 	if os.Getenv("DODO_PAYMENTS_ENVIRONMENT") != "test_mode" {
 		t.Fatal("Acceptance tests create real objects. Set DODO_PAYMENTS_ENVIRONMENT=test_mode.")
 	}
 }
 
-func client() *sdk.Client {
+// AuthOption uses the API key. Without an API key, it uses workload identity with the token source that the environment has.
+func AuthOption() option.RequestOption {
+	if key := os.Getenv("DODO_PAYMENTS_API_KEY"); key != "" {
+		return option.WithBearerToken(key)
+	}
+	return option.WithWorkloadIdentity(option.WorkloadIdentity{})
+}
+
+// client is shared, so that the tests use one access token.
+var client = sync.OnceValue(func() *sdk.Client {
 	return sdk.NewClient(
-		option.WithBearerToken(os.Getenv("DODO_PAYMENTS_API_KEY")),
+		AuthOption(),
 		option.WithBaseURL("https://test.dodopayments.com"),
 		option.WithMaxRetries(5),
 		option.WithMiddleware(engine.RateLimitMiddleware),
 	)
-}
+})
 
 // CheckDestroy returns a check that each object of the resource type is gone or archived in the API.
 // readPath has a %s verb for each parent attribute and then for the ID.
