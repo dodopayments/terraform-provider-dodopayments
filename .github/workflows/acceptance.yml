@@ -5,11 +5,13 @@ on:
   workflow_dispatch: {}
 permissions:
   contents: read
+  id-token: write
 concurrency:
   group: acceptance
   cancel-in-progress: false
 env:
   DODO_PAYMENTS_API_KEY: ${{ secrets.DODO_PAYMENTS_API_KEY }}
+  DODO_PAYMENTS_IDENTITY_PROVIDER_ID: ${{ vars.DODO_PAYMENTS_IDENTITY_PROVIDER_ID }}
   DODO_PAYMENTS_ENVIRONMENT: test_mode
 jobs:
   acceptance:
@@ -76,6 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DODO_PAYMENTS_API_KEY: ${{ secrets.DODO_PAYMENTS_API_KEY }}
+      DODO_PAYMENTS_IDENTITY_PROVIDER_ID: ${{ vars.DODO_PAYMENTS_IDENTITY_PROVIDER_ID }}
       DODO_PAYMENTS_ENVIRONMENT: test_mode
     steps:
       - uses: actions/checkout@v4

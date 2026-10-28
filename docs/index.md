@@ -31,6 +31,42 @@ Set the API key in the `DODO_PAYMENTS_API_KEY` environment variable. Do not writ
 Set `environment`, or the `DODO_PAYMENTS_ENVIRONMENT` environment variable, to select test mode or live mode.
 Each API key works in one mode only. The [test mode and live mode guide](guides/test-and-live-mode) shows two configurations.
 
+## Workload identity
+
+The provider can use workload identity federation instead of an API key.
+It exchanges an OIDC token from the CI system or the cloud platform for a short-lived access token.
+Create a workload identity provider in the dashboard first.
+
+```hcl
+provider "dodopayments" {
+  environment = "test_mode"
+  workload_identity {
+    identity_provider_id = "wip_..."
+    token_source         = "github_actions"
+  }
+}
+```
+
+`token_source` is `auto` (the default), `github_actions`, `gitlab`, `terraform_cloud`, `gcp`, `vercel`, `kubernetes` or `file`.
+Do not set `api_key` together with `workload_identity`.
+If you set neither, `DODO_PAYMENTS_API_KEY` is not set and `DODO_PAYMENTS_IDENTITY_PROVIDER_ID` is set, the provider uses workload identity with the `auto` token source.
+Then a GitHub Actions job needs no change to the provider configuration:
+
+```yaml
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      DODO_PAYMENTS_IDENTITY_PROVIDER_ID: wip_...
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init && terraform apply -auto-approve
+```
+
 ## Retries and rate limits
 
 The provider sends a request again when the API returns HTTP 408, 409, 429 or 5xx, or when the connection fails.
@@ -51,3 +87,14 @@ Each error from the API shows the API message, the HTTP status, the error code a
 - `base_url` (String) A custom base URL for the API. This value overrides `environment`.
 - `environment` (String) The API environment: `live_mode` or `test_mode`. The default is `live_mode`. You can also set the `DODO_PAYMENTS_ENVIRONMENT` environment variable.
 - `max_retries` (Number) The maximum number of retries for a request that fails with HTTP 408, 409, 429 or 5xx, or with a connection error. The default is 5. On HTTP 429, the provider waits until the rate limit window resets.
+- `workload_identity` (Block, Optional) Authenticates with workload identity federation instead of an API key. The provider exchanges a token from the CI system or the cloud platform for a short-lived access token. Do not set `api_key` together with this block. If you set neither, `DODO_PAYMENTS_API_KEY` is not set and `DODO_PAYMENTS_IDENTITY_PROVIDER_ID` is set, the provider uses workload identity with the `auto` token source. (see [below for nested schema](#nestedblock--workload_identity))
+
+<a id="nestedblock--workload_identity"></a>
+### Nested Schema for `workload_identity`
+
+Optional:
+
+- `audience` (String) The audience of the subject token for the `github_actions` and `gcp` token sources. The default is the origin of the API base URL.
+- `identity_provider_id` (String) The ID of the workload identity provider (`wip_...`). You can also set the `DODO_PAYMENTS_IDENTITY_PROVIDER_ID` environment variable.
+- `token_file` (String) The path of the subject token file for the `file` and `kubernetes` token sources. `file` needs this attribute or the `DODO_PAYMENTS_IDENTITY_TOKEN_FILE` environment variable. The default for `kubernetes` is `/var/run/secrets/tokens/dodo-token`.
+- `token_source` (String) The source of the subject token: `auto`, `github_actions`, `gitlab`, `terraform_cloud`, `gcp`, `vercel`, `kubernetes`, `file`. The default is `auto`. `auto` examines GitHub Actions, Terraform Cloud, `DODO_PAYMENTS_IDENTITY_TOKEN_FILE` and the Kubernetes token path, in that order.
