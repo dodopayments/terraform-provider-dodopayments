@@ -4,6 +4,7 @@ package provider
 
 import (
 	"os"
+	"sync"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -19,6 +20,7 @@ import (
 const (
 	identityProviderIDEnv = "DODO_PAYMENTS_IDENTITY_PROVIDER_ID"
 	identityTokenFileEnv  = "DODO_PAYMENTS_IDENTITY_TOKEN_FILE"
+	baseURLEnv            = "DODO_PAYMENTS_BASE_URL"
 )
 
 var tokenSources = []string{"auto", "github_actions", "gitlab", "terraform_cloud", "gcp", "vercel", "kubernetes", "file"}
@@ -57,7 +59,7 @@ func authOption(cfg map[string]tftypes.Value) (option.RequestOption, diag.Diagno
 			diags.AddAttributeError(path.Root("workload_identity"), "Conflicting authentication", "Set api_key or the workload_identity block, not both.")
 			return nil, diags
 		}
-		return workloadIdentityOption(block)
+		return workloadIdentityOption(cfg, block)
 	}
 	if apiKey == "" {
 		apiKey = os.Getenv("DODO_PAYMENTS_API_KEY")
@@ -66,7 +68,7 @@ func authOption(cfg map[string]tftypes.Value) (option.RequestOption, diag.Diagno
 		return option.WithBearerToken(apiKey), diags
 	}
 	if os.Getenv(identityProviderIDEnv) != "" {
-		return workloadIdentityOption(nil)
+		return workloadIdentityOption(cfg, nil)
 	}
 	diags.AddError("Missing API key", "Set the api_key provider attribute or the DODO_PAYMENTS_API_KEY environment variable. To use workload identity, set the workload_identity block or the DODO_PAYMENTS_IDENTITY_PROVIDER_ID environment variable.")
 	return nil, diags
@@ -85,7 +87,24 @@ func workloadIdentityConfig(cfg map[string]tftypes.Value) (map[string]tftypes.Va
 	return block, true
 }
 
-func workloadIdentityOption(block map[string]tftypes.Value) (option.RequestOption, diag.Diagnostics) {
+// workloadIdentityKey identifies one cached option. The endpoint is part of the key because the option holds the access
+// token, and a token is valid only for the API that issued it.
+type workloadIdentityKey struct{ endpoint, id, source, tokenFile, audience string }
+
+// workloadIdentityOptions keeps one option for each configuration. Terraform configures the provider many times in
+// one process, and each new option exchanges a new access token. The API sets a limit on the active tokens of a mapping.
+var workloadIdentityOptions sync.Map
+
+// workloadIdentityEndpoint returns the inputs that select the base URL of the client.
+func workloadIdentityEndpoint(cfg map[string]tftypes.Value) string {
+	environment := configString(cfg, "environment")
+	if environment == "" {
+		environment = os.Getenv(environmentEnv)
+	}
+	return environment + "|" + configString(cfg, "base_url") + "|" + os.Getenv(baseURLEnv)
+}
+
+func workloadIdentityOption(cfg, block map[string]tftypes.Value) (option.RequestOption, diag.Diagnostics) {
 	var diags diag.Diagnostics
 	attr := func(name string) path.Path { return path.Root("workload_identity").AtName(name) }
 	id := configString(block, "identity_provider_id")
@@ -137,5 +156,10 @@ func workloadIdentityOption(block map[string]tftypes.Value) (option.RequestOptio
 		diags.AddAttributeError(attr("token_source"), "Invalid token source", "The token source "+source+" is not known.")
 		return nil, diags
 	}
-	return option.WithWorkloadIdentity(option.WorkloadIdentity{IdentityProviderID: id, Provider: provider}), diags
+	key := workloadIdentityKey{endpoint: workloadIdentityEndpoint(cfg), id: id, source: source, tokenFile: tokenFile, audience: audience}
+	if opt, ok := workloadIdentityOptions.Load(key); ok {
+		return opt.(option.RequestOption), diags
+	}
+	opt, _ := workloadIdentityOptions.LoadOrStore(key, option.WithWorkloadIdentity(option.WorkloadIdentity{IdentityProviderID: id, Provider: provider}))
+	return opt.(option.RequestOption), diags
 }
