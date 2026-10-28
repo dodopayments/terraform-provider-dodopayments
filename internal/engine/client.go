@@ -111,6 +111,9 @@ func RateLimitMiddleware(req *http.Request, next option.MiddlewareNext) (*http.R
 	}
 	if reset, perr := strconv.ParseFloat(res.Header.Get("X-RateLimit-Reset"), 64); perr == nil && reset >= 0 {
 		res.Header.Set("Retry-After", strconv.FormatFloat(reset+rand.Float64(), 'f', 3, 64))
+	} else {
+		// An edge rate limit sends neither header and blocks for up to 60 seconds. The retries must last longer than that.
+		res.Header.Set("Retry-After", strconv.FormatFloat(15+rand.Float64()*5, 'f', 3, 64))
 	}
 	return res, err
 }
