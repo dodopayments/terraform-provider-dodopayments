@@ -38,7 +38,12 @@ func (e *APIError) Error() string {
 }
 
 func newAPIError(method, path string, e *sdk.Error) *APIError {
-	out := &APIError{Method: method, Path: strings.TrimPrefix(path, "/"), Status: e.StatusCode}
+	path = strings.TrimPrefix(path, "/")
+	// A failed workload identity token exchange returns the error of the exchange request, not of the original request.
+	if e.Request != nil && e.Request.URL != nil && !strings.HasSuffix(e.Request.URL.Path, "/"+path) {
+		method, path = e.Request.Method, strings.TrimPrefix(e.Request.URL.Path, "/")
+	}
+	out := &APIError{Method: method, Path: path, Status: e.StatusCode}
 	var body struct {
 		Code    string  `json:"code"`
 		Message *string `json:"message"`
