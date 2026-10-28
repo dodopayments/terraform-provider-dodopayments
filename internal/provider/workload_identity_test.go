@@ -30,6 +30,10 @@ const (
 // clearAuthEnv removes the environment variables that select an authentication method.
 func clearAuthEnv(t *testing.T) {
 	t.Helper()
+	workloadIdentityOptions.Range(func(key, _ any) bool {
+		workloadIdentityOptions.Delete(key)
+		return true
+	})
 	for _, name := range []string{
 		"DODO_PAYMENTS_API_KEY", identityProviderIDEnv, identityTokenFileEnv,
 		"ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN",
