@@ -19,6 +19,42 @@ provider "dodopayments" {
 }
 ```
 
+## Workload identity
+
+The provider can use workload identity federation instead of an API key.
+It exchanges an OIDC token from the CI system or the cloud platform for a short-lived access token.
+Create a workload identity provider in the dashboard first.
+
+```hcl
+provider "dodopayments" {
+  environment = "test_mode"
+  workload_identity {
+    identity_provider_id = "wip_..."
+    token_source         = "github_actions"
+  }
+}
+```
+
+`token_source` is `auto` (the default), `github_actions`, `gitlab`, `terraform_cloud`, `gcp`, `vercel`, `kubernetes` or `file`.
+Do not set `api_key` together with `workload_identity`.
+If you set neither, `DODO_PAYMENTS_API_KEY` is not set and `DODO_PAYMENTS_IDENTITY_PROVIDER_ID` is set, the provider uses workload identity with the `auto` token source.
+Then a GitHub Actions job needs no change to the provider configuration:
+
+```yaml
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      DODO_PAYMENTS_IDENTITY_PROVIDER_ID: wip_...
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init && terraform apply -auto-approve
+```
+
 [`examples/complete`](examples/complete) has one configuration that uses each resource. The registry documentation has guides for test mode and live mode, for import, and for destroy behavior.
 
 ## Resources, data sources, ephemeral resources and actions
