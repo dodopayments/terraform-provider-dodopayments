@@ -85,6 +85,9 @@ func (p *Provider) Schema(_ context.Context, _ provider.SchemaRequest, resp *pro
 				Validators:          []validator.Int64{int64validator.Between(0, 20)},
 			},
 		},
+		Blocks: map[string]schema.Block{
+			"workload_identity": workloadIdentityBlock(),
+		},
 	}
 }
 
@@ -112,12 +115,9 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 		resp.Diagnostics.AddError("Invalid provider configuration", err.Error())
 		return
 	}
-	apiKey := configString(cfg, "api_key")
-	if apiKey == "" {
-		apiKey = os.Getenv("DODO_PAYMENTS_API_KEY")
-	}
-	if apiKey == "" {
-		resp.Diagnostics.AddError("Missing API key", "Set the api_key provider attribute or the DODO_PAYMENTS_API_KEY environment variable.")
+	auth, diags := authOption(cfg)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
 		return
 	}
 	environment := configString(cfg, "environment")
@@ -126,7 +126,7 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	}
 
 	opts := []option.RequestOption{
-		option.WithBearerToken(apiKey),
+		auth,
 		option.WithMaxRetries(configInt(cfg, "max_retries", defaultMaxRetries)),
 		option.WithMiddleware(engine.RateLimitMiddleware),
 		option.WithHeader("User-Agent", fmt.Sprintf("terraform-provider-dodopayments/%s Terraform/%s", p.version, req.TerraformVersion)),

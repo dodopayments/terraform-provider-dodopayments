@@ -37,8 +37,8 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dodopayments/dodopayments-go v1.123.0 h1:TzpS197+v8bio1VUNYzD4/J1aw72Z6TjkHu2gH64WLY=
-github.com/dodopayments/dodopayments-go v1.123.0/go.mod h1:doVlPc7Zfq7I47ek7KGM5M4qO5CRlcD3I/xm0FXKWiE=
+github.com/dodopayments/dodopayments-go v1.124.0 h1:AA3eG07+qi1hxxMJ3SZaCVB0RFYLWbP78BJfHCR5hZM=
+github.com/dodopayments/dodopayments-go v1.124.0/go.mod h1:doVlPc7Zfq7I47ek7KGM5M4qO5CRlcD3I/xm0FXKWiE=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
