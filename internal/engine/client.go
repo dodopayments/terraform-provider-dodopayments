@@ -38,7 +38,12 @@ func (e *APIError) Error() string {
 }
 
 func newAPIError(method, path string, e *sdk.Error) *APIError {
-	out := &APIError{Method: method, Path: strings.TrimPrefix(path, "/"), Status: e.StatusCode}
+	path = strings.TrimPrefix(path, "/")
+	// A failed workload identity token exchange returns the error of the exchange request, not of the original request.
+	if e.Request != nil && e.Request.URL != nil && !strings.HasSuffix(e.Request.URL.Path, "/"+path) {
+		method, path = e.Request.Method, strings.TrimPrefix(e.Request.URL.Path, "/")
+	}
+	out := &APIError{Method: method, Path: path, Status: e.StatusCode}
 	var body struct {
 		Code    string  `json:"code"`
 		Message *string `json:"message"`
@@ -111,6 +116,9 @@ func RateLimitMiddleware(req *http.Request, next option.MiddlewareNext) (*http.R
 	}
 	if reset, perr := strconv.ParseFloat(res.Header.Get("X-RateLimit-Reset"), 64); perr == nil && reset >= 0 {
 		res.Header.Set("Retry-After", strconv.FormatFloat(reset+rand.Float64(), 'f', 3, 64))
+	} else {
+		// An edge rate limit sends neither header and blocks for up to 60 seconds. The retries must last longer than that.
+		res.Header.Set("Retry-After", strconv.FormatFloat(15+rand.Float64()*5, 'f', 3, 64))
 	}
 	return res, err
 }
