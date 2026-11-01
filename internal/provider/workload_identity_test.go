@@ -30,6 +30,10 @@ const (
 // clearAuthEnv removes the environment variables that select an authentication method.
 func clearAuthEnv(t *testing.T) {
 	t.Helper()
+	workloadIdentityOptions.Range(func(key, _ any) bool {
+		workloadIdentityOptions.Delete(key)
+		return true
+	})
 	for _, name := range []string{
 		"DODO_PAYMENTS_API_KEY", identityProviderIDEnv, identityTokenFileEnv,
 		"ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN",
@@ -88,6 +92,7 @@ type fakeAPI struct {
 	server     *httptest.Server
 	exchanges  atomic.Int32
 	authorized atomic.Int32
+	rejected   atomic.Int32
 	audience   atomic.Value
 }
 
@@ -115,11 +120,12 @@ func newFakeAPI(t *testing.T) *fakeAPI {
 			api.exchanges.Add(1)
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"access_token": testAccessToken, "issued_token_type": "urn:ietf:params:oauth:token-type:access_token",
+				"access_token": testAccessToken + "@" + r.Host, "issued_token_type": "urn:ietf:params:oauth:token-type:access_token",
 				"token_type": "Bearer", "expires_in": 3600,
 			})
 		default:
-			if r.Header.Get("Authorization") != "Bearer "+testAccessToken {
+			if r.Header.Get("Authorization") != "Bearer "+testAccessToken+"@"+r.Host {
+				api.rejected.Add(1)
 				w.WriteHeader(http.StatusUnauthorized)
 				_, _ = w.Write([]byte(`{"code":"UNAUTHORIZED","message":"unexpected Authorization header"}`))
 				return
@@ -155,6 +161,26 @@ func (api *fakeAPI) call(t *testing.T, cfg tfsdk.Config) {
 	}
 	if n := api.authorized.Load(); n != 2 {
 		t.Fatalf("got %d API calls with the access token, want 2", n)
+	}
+	if n := api.rejected.Load(); n != 0 {
+		t.Fatalf("got %d API calls with an access token from a different API, want 0", n)
+	}
+}
+
+// TestWorkloadIdentityCacheSeparatesBaseURLs uses the same workload identity configuration with two APIs. Each API must
+// get one exchange and only its own access token.
+func TestWorkloadIdentityCacheSeparatesBaseURLs(t *testing.T) {
+	clearAuthEnv(t)
+	t.Setenv(identityProviderIDEnv, testProviderID)
+	tokenFile := filepath.Join(t.TempDir(), "token")
+	if err := os.WriteFile(tokenFile, []byte(testSubjectToken), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for range 2 {
+		api := newFakeAPI(t)
+		api.call(t, providerConfig(t, map[string]string{"base_url": api.server.URL}, map[string]string{
+			"token_source": "file", "token_file": tokenFile,
+		}))
 	}
 }
 
