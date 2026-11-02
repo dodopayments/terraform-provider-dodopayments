@@ -25,15 +25,15 @@ jobs:
     env:
       TF_ACC: '1'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: go.mod
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
-      - run: go test ./internal/services/... -count=1 -v -timeout 45m -p 2 -parallel 4
+      - run: go test ./internal/services/... -count=1 -v -timeout 45m -p 1 -parallel 4
 
   complete-example:
     needs: acceptance
@@ -41,11 +41,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: go.mod
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
           terraform_version: '1.12.*'
           terraform_wrapper: false
@@ -81,8 +81,8 @@ jobs:
       DODO_PAYMENTS_IDENTITY_PROVIDER_ID: ${{ vars.DODO_PAYMENTS_IDENTITY_PROVIDER_ID }}
       DODO_PAYMENTS_ENVIRONMENT: test_mode
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: go.mod
       - name: Sweep objects that the tests left behind
