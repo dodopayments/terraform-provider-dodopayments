@@ -193,7 +193,7 @@ var listDataSourceSpec = &engine.ListDataSourceSpec{
 	Name:            "entitlements",
 	ListPath:        "entitlements",
 	ParentParams:    []string{},
-	QueryParams:     []string{"integration_type", "locale"},
+	QueryParams:     []string{"integration_type"},
 	ItemsProperty:   "items",
 	PageNumberParam: "page_number",
 	PageSizeParam:   "page_size",
@@ -218,10 +218,6 @@ var listDataSourceSpec = &engine.ListDataSourceSpec{
 				MarkdownDescription: "Filter by integration type.",
 				Optional:            true,
 				Validators:          []validator.String{stringvalidator.OneOf("discord", "telegram", "github", "figma", "framer", "notion", "digital_files", "license_key", "feature_flag")},
-			},
-			"locale": schema.StringAttribute{
-				MarkdownDescription: "Shows the translated name, description and unit of the catalog entities in this\nlocale. The value must be a code from `GET /locales`, for example `fr`.\nA field with no translation, an unknown code, or no code shows the base text.\n\nDo not send a text from a localized response back in a create or update request.\nThe base text then changes to the translated text.",
-				Optional:            true,
 			},
 			"max_items": schema.Int64Attribute{
 				MarkdownDescription: "The maximum number of items to return. The default is 1000.",
